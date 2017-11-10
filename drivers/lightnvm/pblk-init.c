@@ -537,6 +537,7 @@ static int pblk_luns_init(struct pblk *pblk, struct ppa_addr *luns)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
+	struct nvm_chunk_log_page *chunk_log;
 	struct pblk_lun *rlun;
 	int i, ret;
 
@@ -544,6 +545,13 @@ static int pblk_luns_init(struct pblk *pblk, struct ppa_addr *luns)
 	if (geo->nr_luns < 0) {
 		pr_err("pblk: unbalanced LUN config.\n");
 		return -EINVAL;
+	}
+
+	chunk_log = pblk_get_chunk_info(pblk);
+	if (IS_ERR(chunk_log)) {
+		pr_err("pblk: could not get report chunk (%lu)\n",
+							PTR_ERR(chunk_log));
+		return PTR_ERR(chunk_log);
 	}
 
 	pblk->luns = kcalloc(geo->all_luns, sizeof(struct pblk_lun),
