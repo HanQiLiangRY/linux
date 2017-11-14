@@ -97,7 +97,7 @@ static void pblk_end_io_erase(struct nvm_rq *rqd)
  *
  * The caller is responsible for freeing the returned structure
  */
-struct nvm_chunk_log_page *pblk_get_chunk_info(struct pblk *pblk)
+struct nvm_chunk_log_page *pblk_chunk_get_info(struct pblk *pblk)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
@@ -118,6 +118,19 @@ struct nvm_chunk_log_page *pblk_get_chunk_info(struct pblk *pblk)
 	}
 
 	return log;
+}
+
+struct nvm_chunk_log_page *pblk_chunk_get_off(struct pblk *pblk,
+					      struct nvm_chunk_log_page *lp,
+					      struct ppa_addr ppa)
+{
+	struct nvm_tgt_dev *dev = pblk->dev;
+	struct nvm_geo *geo = &dev->geo;
+	int ch_off = ppa.g.ch * geo->nr_chks * geo->nr_luns;
+	int lun_off = ppa.g.lun * geo->nr_chks;
+	int chk_off = ppa.g.blk;
+
+	return lp + ch_off + lun_off + chk_off;
 }
 
 void __pblk_map_invalidate(struct pblk *pblk, struct pblk_line *line,
