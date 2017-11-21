@@ -419,6 +419,15 @@ struct pblk_smeta {
 	struct line_smeta *buf;		/* smeta buffer in persistent format */
 };
 
+struct pblk_chunk {
+	int state;
+	int type;
+	int wi;
+	u64 slba;
+	u64 cnlb;
+	u64 wp;
+};
+
 struct pblk_line {
 	struct pblk *pblk;
 	unsigned int id;		/* Line number corresponds to the
@@ -432,6 +441,8 @@ struct pblk_line {
 	struct list_head list;		/* Free, GC lists */
 
 	unsigned long *lun_bitmap;	/* Bitmap for LUNs mapped in line */
+
+	struct pblk_chunk *chks;	/* Chunks forming line */
 
 	struct pblk_smeta *smeta;	/* Start metadata */
 	struct pblk_emeta *emeta;	/* End medatada */
@@ -519,6 +530,8 @@ struct pblk_line_mgmt {
 
 	unsigned long d_seq_nr;		/* Data line unique sequence number */
 	unsigned long l_seq_nr;		/* Log line unique sequence number */
+
+	atomic_t sysfs_line_state;	/* Line being monitored in sysfs */
 
 	spinlock_t free_lock;
 	spinlock_t close_lock;

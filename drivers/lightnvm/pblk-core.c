@@ -98,9 +98,9 @@ struct nvm_chunk_log_page *pblk_chunk_get_off(struct pblk *pblk,
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
-	int ch_off = ppa.g.ch * geo->nr_chks * geo->nr_luns;
-	int lun_off = ppa.g.lun * geo->nr_chks;
-	int chk_off = ppa.g.blk;
+	int ch_off = ppa.m.ch * geo->nr_chks * geo->nr_luns;
+	int lun_off = ppa.m.lun * geo->nr_chks;
+	int chk_off = ppa.m.chk;
 
 	return lp + ch_off + lun_off + chk_off;
 }
