@@ -434,29 +434,37 @@ static int nvme_nvm_get_chunk_log_page(struct nvm_dev *nvmdev,
 {
 	struct nvme_ns *ns = nvmdev->q->queuedata;
 	struct nvme_command c = { };
-	unsigned long total_dwords = total_len >> 2;
-	unsigned long len, dwords, left = total_len;
+	unsigned long offset = off, left = total_len;
+	unsigned long len, len_dwords, off_dwords;
+	void *buf = log;
 	int ret;
 
 	do {
-		dwords = total_dwords & 0xffffffff;
-		len = (dwords << 2) > left ? left : (dwords << 2);
+		/* Send 256KB at a time */
+		len = (1 << 18) > left ? left : (1 << 18);
+
+		len_dwords = len >> 2;
+		off_dwords = offset >> 2;
 
 		c.get_log_page.opcode = nvme_admin_get_log_page;
 		c.get_log_page.nsid = cpu_to_le32(ns->ns_id);
 		c.get_log_page.lid = NVME_NVM_LOG_REPORT_CHUNK;
-		c.get_log_page.numdl = cpu_to_le16(dwords & 0xffff);
-		c.get_log_page.numdu = cpu_to_le16((dwords & 0xffff0000) >> 16);
+		c.get_log_page.lpol = cpu_to_le32(off_dwords & 0xffffffff);
+		c.get_log_page.lpou = cpu_to_le32(off_dwords >> 32);
+		c.get_log_page.numdl = cpu_to_le16(len_dwords & 0xffff);
+		c.get_log_page.numdu = cpu_to_le16(len_dwords >> 16);
 
-		ret = nvme_submit_sync_cmd(ns->ctrl->admin_q, &c, log, len);
-		if (ret)
+		ret = nvme_submit_sync_cmd(ns->ctrl->admin_q, &c, buf, len);
+		if (ret) {
 			dev_err(ns->ctrl->device,
 				"get chunk log page failed (%d)\n", ret);
+			break;
+		}
 
-		log = (void *)log + len;
+		buf += len;
+		offset += len;
 		left -= len;
-		total_dwords >>= 32;
-	} while (total_dwords);
+	} while (left);
 
 	return ret;
 }
