@@ -1104,11 +1104,38 @@ static int pblk_line_init_bb(struct pblk *pblk, struct pblk_line *line,
 	return 1;
 }
 
-static int pblk_line_prepare(struct pblk *pblk, struct pblk_line *line)
+static int pblk_line_prepare_erase(struct pblk *pblk, struct pblk_line *line)
 {
 	struct pblk_line_meta *lm = &pblk->lm;
 	int blk_to_erase = atomic_read(&line->blk_in_line);
 	int i;
+
+	if (likely(line->state != PBLK_LINESTATE_NEW))
+		return blk_to_erase;
+
+	/* Free (erased) blocks do not need to be erased */
+	for (i = 0; i < lm->blk_per_line; i++) {
+		if (!(line->chks[i].state & NVM_CHK_CLOSED)) {
+			WARN_ONCE(!(line->chks[i].state & NVM_CHK_FREE),
+				"pblk: erasing chunk in invalid state\n");
+
+			set_bit(i, line->erase_bitmap);
+			blk_to_erase--;
+
+			/* pblk manages states in lines form now on */
+			line->chks[i].state = NVM_CHK_HOST_USE;
+		}
+	}
+
+	line->state = PBLK_LINESTATE_FREE;
+
+	return blk_to_erase;
+}
+
+static int pblk_line_prepare(struct pblk *pblk, struct pblk_line *line)
+{
+	struct pblk_line_meta *lm = &pblk->lm;
+	int blk_to_erase;
 
 	line->map_bitmap = kzalloc(lm->sec_bitmap_len, GFP_ATOMIC);
 	if (!line->map_bitmap)
@@ -1124,18 +1151,9 @@ static int pblk_line_prepare(struct pblk *pblk, struct pblk_line *line)
 	/* Bad blocks do not need to be erased */
 	bitmap_copy(line->erase_bitmap, line->blk_bitmap, lm->blk_per_line);
 
-	/* Free (erased) blocks do not need to be erased */
-	for (i = 0; i < lm->blk_per_line; i++) {
-		if (!(line->chks[i].state & NVM_CHK_CLOSED)) {
-			WARN_ONCE(!(line->chks[i].state & NVM_CHK_FREE),
-				"pblk: erasing chunk in invalid state\n");
-
-			set_bit(i, line->erase_bitmap);
-			blk_to_erase--;
-		}
-	}
-
 	spin_lock(&line->lock);
+	blk_to_erase = pblk_line_prepare_erase(pblk, line);
+
 	if (line->state != PBLK_LINESTATE_FREE) {
 		kfree(line->map_bitmap);
 		kfree(line->invalid_bitmap);
