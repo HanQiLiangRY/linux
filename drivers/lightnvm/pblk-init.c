@@ -504,7 +504,7 @@ static int pblk_setup_line_meta(struct pblk *pblk, struct pblk_line *line,
 		struct nvm_chunk_log_page *chunk_log_page;
 		struct ppa_addr ppa;
 
-		ppa = rlun->bppa;
+		ppa = rlun->chunk_bppa;
 		ppa.m.chk = line->id;
 		chunk_log_page = pblk_chunk_get_off(pblk, log_page, ppa);
 
@@ -551,6 +551,7 @@ static int pblk_luns_init(struct pblk *pblk, struct ppa_addr *luns)
 
 		rlun = &pblk->luns[i];
 		rlun->bppa = luns[lunid];
+		rlun->chunk_bppa = luns[i];
 
 		sema_init(&rlun->wr_sem, 1);
 	}

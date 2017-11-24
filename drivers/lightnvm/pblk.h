@@ -201,6 +201,7 @@ struct pblk_rb {
 
 struct pblk_lun {
 	struct ppa_addr bppa;
+	struct ppa_addr chunk_bppa;
 
 	u8 *bb_list;			/* Bad block list for LUN. Only used on
 					 * bring up. Bad blocks are managed
