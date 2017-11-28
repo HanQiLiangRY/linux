@@ -78,14 +78,14 @@ struct nvm_chunk_log_page *pblk_chunk_get_info(struct pblk *pblk)
 	int ret;
 
 	len = geo->all_chunks * sizeof(*log);
-	log = vzalloc(len);
+	log = kzalloc(len, GFP_KERNEL);
 	if (!log)
 		return ERR_PTR(-ENOMEM);
 
 	ret = nvm_get_chunk_log_page(dev, log, 0, len);
 	if (ret) {
 		pr_err("pblk: could not get chunk log page (%d)\n", ret);
-		vfree(log);
+		kfree(log);
 		return ERR_PTR(-EIO);
 	}
 

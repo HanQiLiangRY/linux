@@ -902,11 +902,11 @@ add_emeta_page:
 
 	pblk_set_provision(pblk, nr_free_blks);
 
-	vfree(chunk_log);
+	kfree(chunk_log);
 	return 0;
 
 fail_free_chunk_log:
-	vfree(chunk_log);
+	kfree(chunk_log);
 	while (--i >= 0)
 		pblk_free_line_meta(&pblk->lines[i]);
 fail_free_lines:
