@@ -443,7 +443,7 @@ static int nvme_nvm_get_chunk_log_page(struct nvm_dev *nvmdev,
 		/* Send 256KB at a time */
 		len = (1 << 18) > left ? left : (1 << 18);
 
-		len_dwords = len >> 2;
+		len_dwords = (len >> 2) - 1;
 		off_dwords = offset >> 2;
 
 		c.get_log_page.opcode = nvme_admin_get_log_page;
