@@ -518,7 +518,7 @@ static int pblk_setup_line_meta(struct pblk *pblk, struct pblk_line *line,
 		if (!(chunk->state & NVM_CHK_OFFLINE))
 			continue;
 
-		set_bit(pblk_ppa_to_pos(geo, rlun->bppa), line->blk_bitmap);
+		set_bit(pblk_ppa_to_pos(geo, rlun->chunk_bppa), line->blk_bitmap);
 		(*nr_bad_chks)++;
 	}
 
